@@ -95,7 +95,8 @@ defmodule SpandexDatadog.ApiServer do
       waiting_traces: [],
       batch_size: opts[:batch_size],
       sync_threshold: opts[:sync_threshold],
-      agent_pid: agent_pid
+      agent_pid: agent_pid,
+      container_id: containerId() 
     }
 
     {:ok, state}
@@ -134,7 +135,9 @@ defmodule SpandexDatadog.ApiServer do
 
   @spec send_and_log([Trace.t()], State.t()) :: :ok
   def send_and_log(traces, %{verbose?: verbose?} = state) do
-    headers = @headers ++ [{"X-Datadog-Trace-Count", length(traces)}]
+    headers = @headers 
+      ++ [{"X-Datadog-Trace-Count", length(traces)}] 
+      ++ [{"Datadog-Container-ID", state.container_id}]
 
     response =
       traces
@@ -389,4 +392,21 @@ defmodule SpandexDatadog.ApiServer do
   defp term_to_string(term) when is_binary(term), do: term
   defp term_to_string(term) when is_atom(term), do: term
   defp term_to_string(term), do: inspect(term)
+
+  defp containerId() do
+    ids = [""]
+    if File.exists?("/proc/self/cgroup") do
+      ids = File.read!("/proc/self/cgroup") 
+      |> String.split("\n", trim: true) 
+      |> Enum.flat_map(&Regex.scan(~r/^(\d+):([^:]*):(.+)$/, &1))
+      |> Enum.filter(fn x -> Enum.count(x) == 4 end)
+      |> Enum.map(fn x -> Enum.at(x,3) end)
+      |> Enum.map(fn x -> Enum.at(String.split(x,"/"), 1) end)
+      |> Enum.filter(fn x -> x != nil end)
+      |> Enum.map(&Regex.scan(~r/([0-9a-f]{8}[-_][0-9a-f]{4}[-_][0-9a-f]{4}[-_][0-9a-f]{4}[-_][0-9a-f]{12}|[0-9a-f]{64})(?:.scope)?$/,&1))
+      |> Enum.filter(fn x -> Enum.count(x) < 2 end)
+    end
+
+    Enum.at(ids, 0)
+  end
 end
