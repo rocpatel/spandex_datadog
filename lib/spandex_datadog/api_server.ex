@@ -405,7 +405,7 @@ defmodule SpandexDatadog.ApiServer do
               |> Enum.flat_map(&Regex.scan(~r/^(\d+):([^:]*):(.+)$/, &1))
               |> Enum.filter(fn x -> Enum.count(x) == 4 end)
               |> Enum.map(fn x -> Enum.at(x,3) end)
-              |> Enum.map(fn x -> Enum.at(String.split(x,"/"), 2) end)
+              |> Enum.map(fn x -> Enum.at(String.split(x,"/"), -1) end)
               |> Enum.filter(fn x -> x != nil end)
               |> Enum.flat_map(&Regex.scan(~r/([0-9a-f]{8}[-_][0-9a-f]{4}[-_][0-9a-f]{4}[-_][0-9a-f]{4}[-_][0-9a-f]{12}|[0-9a-f]{64})(?:.scope)?$/,&1))
               |> Enum.map(fn x -> Enum.at(x,1) end)
