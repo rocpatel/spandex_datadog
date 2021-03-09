@@ -87,6 +87,10 @@ defmodule SpandexDatadog.ApiServer do
   def init(opts) do
     {:ok, agent_pid} = Agent.start_link(fn -> 0 end)
 
+    if opts[:verbose?] do
+      Logger.debug(fn -> "container_id: #{container_id()}" end)
+    end
+
     state = %State{
       asynchronous_send?: true,
       host: opts[:host],
