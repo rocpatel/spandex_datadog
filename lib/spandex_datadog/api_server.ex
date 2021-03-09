@@ -97,7 +97,7 @@ defmodule SpandexDatadog.ApiServer do
       batch_size: opts[:batch_size],
       sync_threshold: opts[:sync_threshold],
       agent_pid: agent_pid,
-      container_id: containerId() 
+      container_id: container_id() 
     }
 
     {:ok, state}
@@ -135,10 +135,10 @@ defmodule SpandexDatadog.ApiServer do
   end
 
   @spec send_and_log([Trace.t()], State.t()) :: :ok
-  def send_and_log(traces, %{verbose?: verbose?} = state) do
+  def send_and_log(traces, %{verbose?: verbose?, container_id: container_id} = state) do
     headers = @headers 
       ++ [{"X-Datadog-Trace-Count", length(traces)}] 
-      ++ [{"Datadog-Container-ID", state.container_id}]
+      ++ [{"Datadog-Container-ID", container_id}]
 
     response =
       traces
@@ -394,7 +394,7 @@ defmodule SpandexDatadog.ApiServer do
   defp term_to_string(term) when is_atom(term), do: term
   defp term_to_string(term), do: inspect(term)
 
-  defp containerId() do
+  defp container_id() do
     ids = [""]
     if File.exists?("/proc/self/cgroup") do
       ids = File.read!("/proc/self/cgroup") 
