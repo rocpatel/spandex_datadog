@@ -87,10 +87,6 @@ defmodule SpandexDatadog.ApiServer do
   def init(opts) do
     {:ok, agent_pid} = Agent.start_link(fn -> 0 end)
 
-    if opts[:verbose?] do
-      Logger.debug(fn -> "container_id: #{container_id()}" end)
-    end
-
     state = %State{
       asynchronous_send?: true,
       host: opts[:host],
@@ -101,7 +97,7 @@ defmodule SpandexDatadog.ApiServer do
       batch_size: opts[:batch_size],
       sync_threshold: opts[:sync_threshold],
       agent_pid: agent_pid,
-      container_id: container_id() 
+      container_id: SpandexDatadog.Runtime.container_id() 
     }
 
     {:ok, state}
@@ -397,20 +393,4 @@ defmodule SpandexDatadog.ApiServer do
   defp term_to_string(term) when is_binary(term), do: term
   defp term_to_string(term) when is_atom(term), do: term
   defp term_to_string(term), do: inspect(term)
-
-  defp container_id() do
-    case File.exists?("/proc/self/cgroup") do
-      true -> File.read!("/proc/self/cgroup")
-              |> String.split("\n", trim: true)
-              |> Enum.flat_map(&Regex.scan(~r/^(\d+):([^:]*):(.+)$/, &1))
-              |> Enum.filter(fn x -> Enum.count(x) == 4 end)
-              |> Enum.map(fn x -> Enum.at(x,3) end)
-              |> Enum.map(fn x -> Enum.at(String.split(x,"/"), -1) end)
-              |> Enum.filter(fn x -> x != nil end)
-              |> Enum.flat_map(&Regex.scan(~r/([0-9a-f]{8}[-_][0-9a-f]{4}[-_][0-9a-f]{4}[-_][0-9a-f]{4}[-_][0-9a-f]{12}|[0-9a-f]{64})(?:.scope)?$/,&1))
-              |> Enum.map(fn x -> Enum.at(x,1) end)
-              |> Enum.at(0)
-      _ -> ""
-    end
-  end
 end
