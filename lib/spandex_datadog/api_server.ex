@@ -399,19 +399,18 @@ defmodule SpandexDatadog.ApiServer do
   defp term_to_string(term), do: inspect(term)
 
   defp container_id() do
-    ids = [""]
-    if File.exists?("/proc/self/cgroup") do
-      ids = File.read!("/proc/self/cgroup") 
-      |> String.split("\n", trim: true) 
-      |> Enum.flat_map(&Regex.scan(~r/^(\d+):([^:]*):(.+)$/, &1))
-      |> Enum.filter(fn x -> Enum.count(x) == 4 end)
-      |> Enum.map(fn x -> Enum.at(x,3) end)
-      |> Enum.map(fn x -> Enum.at(String.split(x,"/"), 1) end)
-      |> Enum.filter(fn x -> x != nil end)
-      |> Enum.map(&Regex.scan(~r/([0-9a-f]{8}[-_][0-9a-f]{4}[-_][0-9a-f]{4}[-_][0-9a-f]{4}[-_][0-9a-f]{12}|[0-9a-f]{64})(?:.scope)?$/,&1))
-      |> Enum.filter(fn x -> Enum.count(x) < 2 end)
+    case File.exists?("/proc/self/cgroup") do
+      true -> File.read!("/proc/self/cgroup")
+              |> String.split("\n", trim: true)
+              |> Enum.flat_map(&Regex.scan(~r/^(\d+):([^:]*):(.+)$/, &1))
+              |> Enum.filter(fn x -> Enum.count(x) == 4 end)
+              |> Enum.map(fn x -> Enum.at(x,3) end)
+              |> Enum.map(fn x -> Enum.at(String.split(x,"/"), 2) end)
+              |> Enum.filter(fn x -> x != nil end)
+              |> Enum.flat_map(&Regex.scan(~r/([0-9a-f]{8}[-_][0-9a-f]{4}[-_][0-9a-f]{4}[-_][0-9a-f]{4}[-_][0-9a-f]{12}|[0-9a-f]{64})(?:.scope)?$/,&1))
+              |> Enum.map(fn x -> Enum.at(x,1) end)
+              |> Enum.at(0)
+      _ -> ""
     end
-
-    Enum.at(ids, 0)
   end
 end
