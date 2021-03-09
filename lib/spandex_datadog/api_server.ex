@@ -26,7 +26,8 @@ defmodule SpandexDatadog.ApiServer do
       :waiting_traces,
       :batch_size,
       :sync_threshold,
-      :agent_pid
+      :agent_pid,
+      :container_id
     ]
   end
 
